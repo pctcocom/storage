@@ -1,0 +1,34 @@
+{
+    "name": "pctco/storage",
+    "type": "project",
+    "keywords": ["Aliyun Oos","BaiDu Cloud Bos","Tencent Cloud Cos","Storage Api"],
+    "homepage": "https://pctco.com",
+    "license": "MIT",
+    "description": "Object storage API for major platforms!",
+    "authors": [
+        {
+            "name": "pctco",
+            "email": "pctco.com@gmail.com",
+            "homepage": "https://pctco.com",
+            "role": "Developer"
+        }
+    ],
+    "support": {
+        "email": "pctco.com@gmail.com",
+        "issues": "https://github.com/pctcocom/storage/issues",
+        "forum": "https://pctco.com",
+        "source": "https://github.com/pctcocom/storage"
+    },
+    "require": {
+        "php": ">=7.1"
+    },
+    "suggest": {
+        "ext-event": "Object storage API for major platforms!"
+    },
+    "autoload": {
+        "psr-4": {
+            "Pctco\\Storage\\": "src"
+        }
+    },
+    "minimum-stability": "dev"
+}
