@@ -9,6 +9,7 @@ class Avatar{
    private $config;
    private $id;  // $id OR $uid
    private $dir; // 目录路径
+   private $path; // 目录路径
    private $size; // 想要操作的大小 'big', 'middle', 'small'
    private $avatar; // avatar img
 
@@ -25,7 +26,9 @@ class Avatar{
    	$dir2 = substr($id, 3, 2);
    	$dir3 = substr($id, 5, 2);
 
-      $this->dir = app()->getRootPath().'entrance'.DIRECTORY_SEPARATOR.'uploads'.DIRECTORY_SEPARATOR.'avatar'.DIRECTORY_SEPARATOR.$dir1.DIRECTORY_SEPARATOR.$dir2.DIRECTORY_SEPARATOR.$dir3.DIRECTORY_SEPARATOR;
+
+      $this->path = DIRECTORY_SEPARATOR.'uploads'.DIRECTORY_SEPARATOR.'avatar'.DIRECTORY_SEPARATOR.$dir1.DIRECTORY_SEPARATOR.$dir2.DIRECTORY_SEPARATOR.$dir3.DIRECTORY_SEPARATOR;
+      $this->dir = app()->getRootPath().'entrance'.$this->path;
 
       $this->config = [
          'size'   =>   [200,120,48],
@@ -33,7 +36,15 @@ class Avatar{
       ];
 
       $this->size = in_array($size, ['big', 'middle', 'small']) ? $size : 'middle';
-      $this->avatar = $avatar;
+
+
+      $base64 = new \Pctco\Image\Base64();
+      $image = $base64->save($avatar,'entrance/uploads/temp/',['y','m'],true,false);
+      if ($image['error'] == 0) {
+         $this->avatar = $image['path']['system'];
+      }else{
+         $this->avatar = $avatar;
+      }
    }
    /**
    * @name path
@@ -43,9 +54,9 @@ class Avatar{
    public function path(){
    	$path = substr($this->id, -2)."_avatar_$this->size.jpg";
       if(file_exists($this->dir.$path)) {
-      	return DIRECTORY_SEPARATOR.$this->dir.$path;
+      	return $this->path.$path;
       } else {
-      	return DIRECTORY_SEPARATOR.'entrance'.DIRECTORY_SEPARATOR.'avatar'.DIRECTORY_SEPARATOR.'default_avatar_'.$this->size.'.jpg';
+      	return DIRECTORY_SEPARATOR.'uploads'.DIRECTORY_SEPARATOR.'avatar'.DIRECTORY_SEPARATOR.'default_avatar_'.$this->size.'.jpg';
       }
    }
    /**
