@@ -35,11 +35,16 @@ class Avatar{
          'name'   =>   ['big', 'middle', 'small']
       ];
 
-      $this->size = in_array($size, ['big', 'middle', 'small']) ? $size : 'middle';
+
+      if ($size === 'all') {
+         $this->size = ['big', 'middle', 'small'];
+      }else{
+         $this->size = in_array($size, ['big', 'middle', 'small']) ? $size : 'middle';
+      }
 
 
-      $base64 = new \Pctco\Image\Base64();
-      $image = $base64->save($avatar,'entrance/uploads/temp/',['y','m'],true,false);
+      $UploadImage = new \Pctco\Storage\App\UploadImage();
+      $image = $UploadImage->SaveBase64ToImage($avatar,'entrance/uploads/temp/',['y','m'],true,false);
       if ($image['error'] == 0) {
          $this->avatar = $image['path']['system'];
       }else{
@@ -52,11 +57,24 @@ class Avatar{
    * @return string
    **/
    public function path(){
-   	$path = substr($this->id, -2)."_avatar_$this->size.jpg";
-      if(file_exists($this->dir.$path)) {
-      	return $this->path.$path;
-      } else {
-      	return DIRECTORY_SEPARATOR.'uploads'.DIRECTORY_SEPARATOR.'avatar'.DIRECTORY_SEPARATOR.'default_avatar_'.$this->size.'.jpg';
+      if (is_array($this->size)) {
+         $group = [];
+         foreach ($this->size as $v) {
+            $path = substr($this->id, -2)."_avatar_$v.jpg";
+            if(file_exists($this->dir.$path)) {
+            	$group[$v] = $this->path.$path;
+            } else {
+            	$group[$v] =  DIRECTORY_SEPARATOR.'uploads'.DIRECTORY_SEPARATOR.'avatar'.DIRECTORY_SEPARATOR.'default_avatar_'.$v.'.jpg';
+            }
+         }
+         return $group;
+      }else{
+         $path = substr($this->id, -2)."_avatar_$this->size.jpg";
+         if(file_exists($this->dir.$path)) {
+         	return $this->path.$path;
+         } else {
+         	return DIRECTORY_SEPARATOR.'uploads'.DIRECTORY_SEPARATOR.'avatar'.DIRECTORY_SEPARATOR.'default_avatar_'.$this->size.'.jpg';
+         }
       }
    }
    /**

@@ -1,14 +1,16 @@
 <?php
 namespace Pctco\Storage\App;
 use think\facade\Config;
+use think\facade\Cache;
 use Naucon\File\File;
+use Pctco\Verification\Regexp;
 /**
  *
  */
 class UploadImage{
    function __construct(){
       $config = [
-         'os'   =>   Config::get('initialize')['client']['domain']['os']
+         'os'   =>   Cache::store('config')->get(md5('app\admin\controller\Config\storage'))
       ];
       $this->config = $config;
    }
@@ -49,14 +51,16 @@ class UploadImage{
 
       // 创建文件名
       if($FileName){
-         $ext = strrchr($link,'.');
-         if(empty(in_array($ext,['.gif','.jpg','.jpeg','.png']))){
+         $isImg = new Regexp($link);
+         if ($isImg->check('format.link.img')) {
+            $ext = strrchr($isImg->RemoveUrlParam(),'.');
+            $FileName = md5(time().rand(1,99999999)).$ext;
+         }else{
             return [
                'prompt'   =>   'Picture suffix is not supported',
                'error' => 3
             ];
          }
-         $FileName = md5(time().rand(1,99999999)).$ext;
       }
 
       //创建保存目录
@@ -97,8 +101,8 @@ class UploadImage{
             $upload = $storage->upload($path.$SaveDate.$FileName);
             if ($upload === true) {
                $absolute = $this->config['os']['domain'].$absolute;
-               $fileObject = new File($SavePath.$FileName);
-               $fileObject->delete();
+               $file = new File($SavePath.$FileName);
+               $file->delete();
             }
          }
       }
@@ -156,7 +160,6 @@ class UploadImage{
 
          $SavePath = $SavePath.$FileName;
          if (file_put_contents($SavePath,base64_decode(str_replace($result[1], '', $base64)))){
-
 
             $absolute = DIRECTORY_SEPARATOR.$path.$SaveDate.$FileName;
             if ($isOs) {
