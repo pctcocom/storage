@@ -1,7 +1,6 @@
 <?php
 namespace Pctco\Storage\App;
 use Naucon\File\File;
-use think\facade\Cache;
 /**
  * 头像处理
  */

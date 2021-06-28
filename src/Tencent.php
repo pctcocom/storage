@@ -89,6 +89,14 @@ class Tencent{
    * @return boolean
    **/
    public function exist($file){
-
+      try {
+         $this->client->getObject(array(
+            'Bucket' => $this->config['bucket'],
+            'Key' => $file
+         ));
+         return true;
+      } catch (\Exception $e) {
+         return false;
+      }
    }
 }
