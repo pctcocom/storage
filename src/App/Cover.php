@@ -2,6 +2,7 @@
 namespace Pctco\Storage\App;
 use Naucon\File\File;
 use think\facade\Cache;
+use Pctco\Coding\Skip32\Skip;
 /**
  * 封面处理
  */
@@ -11,7 +12,7 @@ class Cover{
    * @param mixed $cover 上传路径 img
    * @param mixed $dir 存储目录文件夹名称
    **/
-   function __construct($id,$cover,$dir = 'cover'){
+   function __construct($id,$cover,$dir = 'cover',$skip = 'cover'){
       $this->config = [
          'os'   =>   Cache::store('config')->get(md5('app\admin\controller\Config\storage'))
       ];
@@ -27,7 +28,7 @@ class Cover{
 
       $this->dirs = $dir;
 
-      $this->FileName = substr($this->id, -2).'-cover.jpg';
+      $this->FileName = Skip::en($skip,substr($this->id, -2)).'-cover.jpg';
 
       $this->path = 'uploads'.DIRECTORY_SEPARATOR.$dir.DIRECTORY_SEPARATOR.$dir1.DIRECTORY_SEPARATOR.$dir2.DIRECTORY_SEPARATOR.$dir3.DIRECTORY_SEPARATOR;
       $this->dir = app()->getRootPath().'entrance'.DIRECTORY_SEPARATOR.$this->path;
