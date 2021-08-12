@@ -1,6 +1,7 @@
 <?php
 namespace Pctco\Storage\App;
 use Naucon\File\File;
+use app\model\User;
 /**
  * 头像处理
  */
@@ -43,7 +44,7 @@ class Avatar{
 
 
       $UploadImage = new \Pctco\Storage\App\UploadImage();
-      $image = $UploadImage->SaveBase64ToImage($avatar,'entrance/uploads/temp/',['y','m'],true,false);
+      $image = $UploadImage->SaveBase64ToImage($avatar,'uploads/temp/',['y','m'],true,false);
       if ($image['error'] == 0) {
          $this->avatar = $image['path']['system'];
       }else{
@@ -102,6 +103,16 @@ class Avatar{
       }
       $fileObject = new File($this->avatar);
       $fileObject->delete();
+
+      try {
+         $User = new User();
+         return $User->UpdateUserSession([
+            'utime'   =>   time()
+         ]);
+
+      } catch (\Exception $e) {
+
+      }
       return self::path();
    }
    /**

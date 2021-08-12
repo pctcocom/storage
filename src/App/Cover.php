@@ -34,7 +34,16 @@ class Cover{
       $this->dir = app()->getRootPath().'entrance'.DIRECTORY_SEPARATOR.$this->path;
 
       $UploadImage = new \Pctco\Storage\App\UploadImage();
-      $image = $UploadImage->SaveBase64ToImage($cover,'entrance/uploads/temp/',['y','m'],true,false);
+
+      $regexp = new \Pctco\Verification\Regexp($cover);
+      if ($regexp->check('format.link.img') == 1) {
+         $image = $UploadImage->SaveLinkImage($cover,'entrance/uploads/temp/',['y','m'],true,false,false);
+      }else{
+         $image = $UploadImage->SaveBase64ToImage($cover,'entrance/uploads/temp/',['y','m'],true,false);
+      }
+
+
+
       if ($image['error'] == 0) {
          $this->cover = $image['path']['system'];
       }else{

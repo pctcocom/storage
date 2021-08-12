@@ -19,6 +19,75 @@ class Aliyun{
       }
    }
    /**
+   * @name 字符串上传
+   * @describe putObject
+   * @param mixed $file 文本路径
+   * @param mixed $content 字符串内容
+   * @return boolean
+   **/
+   public function put($file,$content){
+      try {
+         $this->client->putObject($this->config['bucket'],$file,$content);
+         return true;
+      } catch (OssException $e) {
+         return $e->getMessage();
+      }
+   }
+   /**
+   * @name 字符串读取
+   * @describe getObject
+   * @param mixed $file 文本路径
+   * @return boolean
+   **/
+   public function get($file){
+      try {
+         return $this->client->getObject($this->config['bucket'],$file);
+      } catch (OssException $e) {
+         // return $e->getMessage();
+         return false;
+      }
+   }
+   /**
+   * @name 列举文件
+   * @describe listObjects
+   * @param mixed $dir 文件夹路径 dir/
+   * @return boolean
+   **/
+   public function list($dir){
+      try {
+         $info =
+         $this->client->listObjects($this->config['bucket'],[
+            'delimiter' => '/',
+            'prefix' => $dir,
+            'max-keys' => 1000,
+            'marker' => '',
+         ]);
+
+         $objectList = $info->getObjectList(); // object list
+
+         if (!empty($objectList)) {
+            return $objectList;
+         }
+         return false;
+      } catch (\Exception $e) {
+         return false;
+      }
+   }
+   /**
+   * @name 文件拷贝
+   * @describe copyObject https://help.aliyun.com/document_detail/88514.html
+   * @param mixed $FromFile 文本路径(从)
+   * @param mixed $ToFile 文本路径(到)
+   * @return boolean
+   **/
+   public function copy($FromFile,$ToFile){
+      try {
+         return $this->client->copyObject($this->config['bucket'],$FromFile,$this->config['bucket'],$ToFile);
+      } catch (OssException $e) {
+         return $e->getMessage();
+      }
+   }
+   /**
    * @name 单文件上传 AND 批量文件上传
    * @describe uploadFile
    * @param mixed $file 路径/内容
@@ -51,6 +120,17 @@ class Aliyun{
    **/
    public function delete($file){
       try {
+         if (substr($file, -1) === '/') { // 删除文件夹中所有文件包括文件夹
+            $file = $this->list($file);
+            if ($file !== false) {
+               $files = [];
+               foreach ($file as $v) {
+                  $files[] = $v->getKey();
+               }
+               $file = $files;
+            }
+         }
+
          if (is_array($file)) {
             $this->client->deleteObjects($this->config['bucket'],$file);
          }else{

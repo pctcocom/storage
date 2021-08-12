@@ -16,6 +16,90 @@ class Tencent{
       }
    }
    /**
+   * @name 字符串上传
+   * @describe putObject
+   * @param mixed $file 文本路径
+   * @param mixed $content 字符串内容
+   * @return boolean
+   **/
+   public function put($file,$content){
+      try {
+         $this->client->putObject([
+            'Bucket'   =>   $this->config['bucket'],
+            'Key'   =>   $file,
+            'Body'   =>   $content
+         ]);
+         return true;
+      } catch (\Exception $e) {
+         return "$e\n";
+      }
+
+   }
+   /**
+   * @name 字符串读取
+   * @describe getObject
+   * @param mixed $file 文本路径
+   * @return boolean
+   **/
+   public function get($file){
+      try {
+         // $data =
+         // $this->client->getObject([
+         //    'Bucket'   =>   $this->config['bucket'],
+         //    'Key'   =>   $file
+         // ])->toArray();
+         // $body = $data['Body'];
+
+         return file_get_contents('https://'.$this->config['bucket'].'.cos.'.$this->config['region'].'.myqcloud.com/'.$file);
+      } catch (\Exception $e) {
+         return false;
+      }
+   }
+   /**
+   * @name 列举文件
+   * @describe listObjects
+   * @param mixed $dir 文件夹路径 dir/
+   * @return boolean
+   **/
+   public function list($dir){
+      try {
+         $data =
+         $this->client->listObjects([
+            'Bucket' => $this->config['bucket'],
+            'Delimiter' => '',
+            'EncodingType' => 'url',
+            'Marker' => '',
+            'Prefix' => $dir,
+            'MaxKeys' => 1000,
+         ])
+         ->toArray();
+
+         if (!empty($data['Contents'])) {
+            return $data['Contents'];
+         }
+         return false;
+      } catch (\Exception $e) {
+         return false;
+      }
+   }
+   /**
+   * @name 文件拷贝
+   * @describe copyObject https://help.aliyun.com/document_detail/88514.html
+   * @param mixed $file 文本路径
+   * @return boolean
+   **/
+   public function copy($FromFile,$ToFile){
+      try {
+         return $this->client->copyObject([
+            'Bucket'   =>   $this->config['bucket'],
+            'Key'   =>   $FromFile,
+            'CopySource'   =>   $this->config['bucket'].'.cos.'.$this->config['region'].'.myqcloud.com/'.$ToFile
+         ]);
+      } catch (\Exception $e) {
+         return "$e\n";
+      }
+   }
+   /**
    * @name 单文件上传
    * @describe putObjectFromFile
    * @param mixed $file 路径/内容
@@ -62,14 +146,22 @@ class Tencent{
    **/
    public function delete($file){
       try {
-         if (is_array($file)) {
+
+         if (substr($file, -1) === '/') { // 删除文件夹中所有文件包括文件夹
+            $file = $this->list($file);
+            if ($file !== false) {
+               $file = array_reverse(array_column($file,'Key'));
+            }
+         }
+
+         if (is_array($file)) { // 批量删除
             foreach ($file as $v) {
                $this->client->deleteObject([
                   'Bucket' => $this->config['bucket'],
-                  'Key' => $v
+                  'Key' => urldecode($v)
                ]);
             }
-         }else{
+         }else{ // 单文件删除
             $this->client->deleteObject([
                'Bucket' => $this->config['bucket'],
                'Key' => $file
@@ -90,7 +182,7 @@ class Tencent{
    **/
    public function exist($file){
       try {
-         $this->client->getObject(array(
+         return $this->client->headObject(array(
             'Bucket' => $this->config['bucket'],
             'Key' => $file
          ));
