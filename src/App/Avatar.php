@@ -18,14 +18,13 @@ class Avatar{
    * @param mixed $size 大小 ['big', 'middle', 'small']
    * @param mixed $avatar 头像路径
    **/
-   function __construct($id,$size,$avatar){
+   function __construct($id,$size = 'middle',$avatar = ''){
       $this->id = $id;
       $id = abs(intval($id));
    	$id = sprintf("%09d", $id);
    	$dir1 = substr($id, 0, 3);
    	$dir2 = substr($id, 3, 2);
    	$dir3 = substr($id, 5, 2);
-
 
       $this->path = DIRECTORY_SEPARATOR.'uploads'.DIRECTORY_SEPARATOR.'avatar'.DIRECTORY_SEPARATOR.$dir1.DIRECTORY_SEPARATOR.$dir2.DIRECTORY_SEPARATOR.$dir3.DIRECTORY_SEPARATOR;
       $this->dir = app()->getRootPath().'entrance'.$this->path;
