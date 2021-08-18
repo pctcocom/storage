@@ -33,6 +33,16 @@ class UploadImage{
             'error' => 1
          ];
       }
+
+      try {
+         file_get_contents($link);
+      } catch (\Exception $e) {
+         return [
+            'prompt'   =>   'Link has expired',
+            'error' => 5
+         ];
+      }
+
       if(empty($path)){
          return [
             'prompt'   =>   'Path does not exist',
@@ -232,9 +242,11 @@ class UploadImage{
    * @describe 从文本内容中抓取 图片文件 本地图片或远程链接图片  或 替换 对象存储链接
    * @param mixed $content html or md 内容
    * @param mixed $type .md or .html
+   * @param mixed $dir uploads/books/
+   * @param mixed $date ['y','m']  or ''
    * @return String
    **/
-   public function GrabSave($content,$type,$dir){
+   public function GrabSave($content,$type,$dir,$date = ['y','m']){
       $regexp = new Regexp($content);
 
       /**
@@ -243,7 +255,7 @@ class UploadImage{
       $BArr = $regexp->find('html.img.src.base64');
       if ($BArr !== false) {
          foreach ($BArr as $base64) {
-            $image = $this->SaveBase64ToImage($base64,'uploads/'.$dir.'/',['y','m']);
+            $image = $this->SaveBase64ToImage($base64,$dir,$date);
             if ($image['error'] == 0) {
                $path_absolute = $image['path']['absolute'];
                if ($this->config['os']['use'] == 1) {
@@ -279,7 +291,7 @@ class UploadImage{
                ]
             ))) {
                $image =
-               $this->SaveLinkImage($DLink,'uploads/'.$dir.'/',['y','m']);
+               $this->SaveLinkImage($DLink,$dir,$date);
                if ($image['error'] == 0) {
                   $path_absolute = $image['path']['absolute'];
                   if ($this->config['os']['use'] == 1) {
@@ -293,8 +305,8 @@ class UploadImage{
                   if ($DLinkDoname == '') {
                      $content = str_replace($DLink,$this->config['os']['var'].$DLink,$content);
                   }else{
-                     $image = str_replace($this->config['os']['domain'].'/uploads/'.$dir.'/','',$DLink);
-                     $content = str_replace($DLink,$this->config['os']['var'].'/uploads/'.$dir.'/'.$image,$content);
+                     $image = str_replace($this->config['os']['domain'].'/'.$dir,'',$DLink);
+                     $content = str_replace($DLink,$this->config['os']['var'].'/'.$dir.$image,$content);
                   }
                }
             }
@@ -309,7 +321,7 @@ class UploadImage{
    * @param mixed $type .md or .html
    * @return String
    **/
-   public function GrabAbsoluteSave($content,$type,$dir){
+   public function GrabAbsoluteSave($content,$type,$dir,$date = ['y','m']){
       $regexp = new Regexp($content);
 
       if ($type === '.md') {
@@ -321,7 +333,7 @@ class UploadImage{
          foreach ($LArr as $DLink) {
             $LinkImage = str_replace($this->config['os']['var'],$this->config['os']['domain'], $DLink);
             $image =
-            $this->SaveLinkImage($LinkImage,'uploads/'.$dir.'/',['y','m']);
+            $this->SaveLinkImage($LinkImage,$dir,$date);
             if ($image['error'] == 0) {
                $path_absolute = $image['path']['absolute'];
                if ($this->config['os']['use'] == 1) {

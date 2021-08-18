@@ -42,8 +42,6 @@ class Cover{
          $image = $UploadImage->SaveBase64ToImage($cover,'entrance/uploads/temp/',['y','m'],true,false);
       }
 
-
-
       if ($image['error'] == 0) {
          $this->cover = $image['path']['system'];
       }else{
@@ -60,13 +58,14 @@ class Cover{
          if($this->storage->exist($this->path.$this->FileName)) {
             return $this->config['os']['domain'].DIRECTORY_SEPARATOR.$this->path.$this->FileName;
          } else {
-            return $this->config['os']['domain'].DIRECTORY_SEPARATOR.'uploads'.DIRECTORY_SEPARATOR.$this->dirs.DIRECTORY_SEPARATOR.'cover.jpg';
+            // return $this->config['os']['domain'].DIRECTORY_SEPARATOR.'uploads'.DIRECTORY_SEPARATOR.$this->dirs.DIRECTORY_SEPARATOR.'cover.jpg';
+            return DIRECTORY_SEPARATOR.'uploads'.DIRECTORY_SEPARATOR.$this->dirs.DIRECTORY_SEPARATOR.'cover.png';
          }
       }else{
          if(file_exists($this->dir.$this->FileName)) {
             return $this->path.$this->FileName;
          } else {
-            return DIRECTORY_SEPARATOR.'uploads'.DIRECTORY_SEPARATOR.$this->dirs.DIRECTORY_SEPARATOR.'cover.jpg';
+            return DIRECTORY_SEPARATOR.'uploads'.DIRECTORY_SEPARATOR.$this->dirs.DIRECTORY_SEPARATOR.'cover.png';
          }
       }
    }
@@ -84,10 +83,11 @@ class Cover{
       try {
          $image = \think\Image::open($this->cover);
       } catch (\Exception $e) {
-         return json([
-            'status' => 'warning',
-            'prompt' => $e->getMessage()
-         ]);
+         return self::path();
+         // return json([
+         //    'status' => 'warning',
+         //    'prompt' => $e->getMessage()
+         // ]);
       }
 
       $image->thumb(500,705,\think\Image::THUMB_SCALING)->save($this->dir.$this->FileName);
