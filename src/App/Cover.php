@@ -28,7 +28,7 @@ class Cover{
 
       $this->dirs = $dir;
 
-      $this->FileName = Skip::en($skip,substr($this->id, -2)).'-cover.jpg';
+      $this->FileName = Skip::en($skip,$this->id).'-cover.jpg';
 
       $this->path = 'uploads'.DIRECTORY_SEPARATOR.$dir.DIRECTORY_SEPARATOR.$dir1.DIRECTORY_SEPARATOR.$dir2.DIRECTORY_SEPARATOR.$dir3.DIRECTORY_SEPARATOR;
       $this->dir = app()->getRootPath().'entrance'.DIRECTORY_SEPARATOR.$this->path;

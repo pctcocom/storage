@@ -49,7 +49,7 @@ class Text{
       $this->dir = $this->root.$this->path;
 
       // /usr/local/var/www/website-ui/www/entrance/uploads/books/000/00/00/90/848656128.md
-      $this->file = $this->dir.Skip::en($skip,substr($iid, -2)).$format;
+      $this->file = $this->dir.Skip::en($skip,$iid).$format;
 
 
       // uploads/books/000/00/00/90/848656128.md
