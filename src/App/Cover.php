@@ -11,8 +11,10 @@ class Cover{
    * @param mixed $id or $uid
    * @param mixed $cover 上传路径 img
    * @param mixed $dir 存储目录文件夹名称
+   * @param mixed $skip Skip
+   * @param mixed $alias 别名  1221121-cover($alias).jpg
    **/
-   function __construct($id,$cover,$dir = 'cover',$skip = 'cover'){
+   function __construct($id,$cover,$dir = 'cover',$skip = 'cover',$alias = 'cover'){
       $this->config = [
          'os'   =>   Cache::store('config')->get(md5('app\admin\controller\Config\storage'))
       ];
@@ -27,26 +29,30 @@ class Cover{
    	$dir3 = substr($id, 5, 2);
 
       $this->dirs = $dir;
+      $this->alias = $alias;
 
-      $this->FileName = Skip::en($skip,$this->id).'-cover.jpg';
+      $this->FileName = Skip::en($skip,$this->id).'-'.$this->alias.'.jpg';
 
       $this->path = 'uploads'.DIRECTORY_SEPARATOR.$dir.DIRECTORY_SEPARATOR.$dir1.DIRECTORY_SEPARATOR.$dir2.DIRECTORY_SEPARATOR.$dir3.DIRECTORY_SEPARATOR;
       $this->dir = app()->getRootPath().'entrance'.DIRECTORY_SEPARATOR.$this->path;
 
       $UploadImage = new \Pctco\Storage\App\UploadImage();
 
-      $regexp = new \Pctco\Verification\Regexp($cover);
-      if ($regexp->check('format.link.img') == 1) {
-         $image = $UploadImage->SaveLinkImage($cover,'entrance/uploads/temp/',['y','m'],true,false,false);
-      }else{
-         $image = $UploadImage->SaveBase64ToImage($cover,'entrance/uploads/temp/',['y','m'],true,false);
+      if ($cover !== false) {
+         $regexp = new \Pctco\Verification\Regexp($cover);
+         if ($regexp->check('format.link.img') === false) {
+            $image = $UploadImage->SaveBase64ToImage($cover,'entrance/uploads/temp/',['y','m'],true,false);
+         }else{
+            $image = $UploadImage->SaveLinkImage($cover,'entrance/uploads/temp/',['y','m'],true,false,false);
+         }
+
+         if ($image['error'] == 0) {
+            $this->cover = $image['path']['system'];
+         }else{
+            $this->cover = $cover;
+         }
       }
 
-      if ($image['error'] == 0) {
-         $this->cover = $image['path']['system'];
-      }else{
-         $this->cover = $cover;
-      }
    }
    /**
    * @name path
@@ -58,14 +64,13 @@ class Cover{
          if($this->storage->exist($this->path.$this->FileName)) {
             return $this->config['os']['domain'].DIRECTORY_SEPARATOR.$this->path.$this->FileName;
          } else {
-            // return $this->config['os']['domain'].DIRECTORY_SEPARATOR.'uploads'.DIRECTORY_SEPARATOR.$this->dirs.DIRECTORY_SEPARATOR.'cover.jpg';
-            return DIRECTORY_SEPARATOR.'uploads'.DIRECTORY_SEPARATOR.$this->dirs.DIRECTORY_SEPARATOR.'cover.png';
+            return DIRECTORY_SEPARATOR.'uploads'.DIRECTORY_SEPARATOR.$this->dirs.DIRECTORY_SEPARATOR.$this->alias.'.png';
          }
       }else{
          if(file_exists($this->dir.$this->FileName)) {
             return $this->path.$this->FileName;
          } else {
-            return DIRECTORY_SEPARATOR.'uploads'.DIRECTORY_SEPARATOR.$this->dirs.DIRECTORY_SEPARATOR.'cover.png';
+            return DIRECTORY_SEPARATOR.'uploads'.DIRECTORY_SEPARATOR.$this->dirs.DIRECTORY_SEPARATOR.$this->alias.'.png';
          }
       }
    }
@@ -82,6 +87,7 @@ class Cover{
 
       try {
          $image = \think\Image::open($this->cover);
+         $image->thumb(500,705,\think\Image::THUMB_SCALING)->save($this->dir.$this->FileName);
       } catch (\Exception $e) {
          return self::path();
          // return json([
@@ -89,9 +95,6 @@ class Cover{
          //    'prompt' => $e->getMessage()
          // ]);
       }
-
-      $image->thumb(500,705,\think\Image::THUMB_SCALING)->save($this->dir.$this->FileName);
-
 
       if ($this->config['os']['use'] == 1) {
          $upload = $this->storage->upload($this->path.$this->FileName);
@@ -101,7 +104,7 @@ class Cover{
 
       $file = new File($this->cover);
       $file->delete();
-      return self::path();
+      return $this->path();
 
    }
    /**

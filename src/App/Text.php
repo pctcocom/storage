@@ -14,7 +14,11 @@ class Text{
    * @param mixed $id    item(链接id) id
    * @param mixed $iid    index(索引id) id
    * @param mixed $format    文件格式 如: .md
-   * @param mixed $content    [true:则复制 $this->index 路径文本内容,自定义文件内容:/test/index.md,self::get:获取id路径下的文件内容,直接文本:'...']
+   * @param mixed $content
+   *       true: 则复制 $this->index 路径文本内容
+   *       自定义文件内容: /test/index.md
+   *       self::get: 获取id路径下的文件内容
+   *       直接文本: '...'
    * @param mixed $dir 存储目录文件夹名称
    * @param mixed $skip 加密解密类型
    **/

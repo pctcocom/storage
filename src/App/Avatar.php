@@ -16,17 +16,19 @@ class Avatar{
    /**
    * @param mixed $id or $uid
    * @param mixed $size 大小 ['big', 'middle', 'small']
-   * @param mixed $avatar 头像路径
+   * @param mixed $avatar 头像图片文件路径
+   * @param mixed $dirs 存储在 uploads 目录下的文件夹名称 默认 'avatar'
    **/
-   function __construct($id,$size = 'middle',$avatar = ''){
+   function __construct($id,$size = 'middle',$avatar = '',$dirs = 'avatar'){
       $this->id = $id;
+      $this->dirs = $dirs;
       $id = abs(intval($id));
    	$id = sprintf("%09d", $id);
    	$dir1 = substr($id, 0, 3);
    	$dir2 = substr($id, 3, 2);
    	$dir3 = substr($id, 5, 2);
 
-      $this->path = DIRECTORY_SEPARATOR.'uploads'.DIRECTORY_SEPARATOR.'avatar'.DIRECTORY_SEPARATOR.$dir1.DIRECTORY_SEPARATOR.$dir2.DIRECTORY_SEPARATOR.$dir3.DIRECTORY_SEPARATOR;
+      $this->path = DIRECTORY_SEPARATOR.'uploads'.DIRECTORY_SEPARATOR.$this->dirs.DIRECTORY_SEPARATOR.$dir1.DIRECTORY_SEPARATOR.$dir2.DIRECTORY_SEPARATOR.$dir3.DIRECTORY_SEPARATOR;
       $this->dir = app()->getRootPath().'entrance'.$this->path;
 
       $this->config = [
@@ -41,10 +43,14 @@ class Avatar{
          $this->size = in_array($size, ['big', 'middle', 'small']) ? $size : 'middle';
       }
 
-
       $UploadImage = new \Pctco\Storage\App\UploadImage();
-      $image = $UploadImage->SaveBase64ToImage($avatar,'uploads/temp/',['y','m'],true,false);
-      if ($image['error'] == 0) {
+
+      $regexp = new \Pctco\Verification\Regexp($avatar);
+      if ($regexp->check('format.img.base64') !== false){
+         $image = $UploadImage->SaveBase64ToImage($avatar,'uploads/temp/',['y','m'],true,false);
+         $this->avatar = $image['path']['system'];
+      }else if($regexp->check('html.href.link')){
+         $image = $UploadImage->SaveLinkImage($avatar,'uploads/temp/',['y','m'],true,false,false);
          $this->avatar = $image['path']['system'];
       }else{
          $this->avatar = $avatar;
@@ -63,7 +69,7 @@ class Avatar{
             if(file_exists($this->dir.$path)) {
             	$group[$v] = $this->path.$path;
             } else {
-            	$group[$v] =  DIRECTORY_SEPARATOR.'uploads'.DIRECTORY_SEPARATOR.'avatar'.DIRECTORY_SEPARATOR.'default_avatar_'.$v.'.jpg';
+            	$group[$v] =  DIRECTORY_SEPARATOR.'uploads'.DIRECTORY_SEPARATOR.$this->dirs.DIRECTORY_SEPARATOR.'default_avatar_'.$v.'.jpg';
             }
          }
          return $group;
@@ -72,7 +78,7 @@ class Avatar{
          if(file_exists($this->dir.$path)) {
          	return $this->path.$path;
          } else {
-         	return DIRECTORY_SEPARATOR.'uploads'.DIRECTORY_SEPARATOR.'avatar'.DIRECTORY_SEPARATOR.'default_avatar_'.$this->size.'.jpg';
+         	return DIRECTORY_SEPARATOR.'uploads'.DIRECTORY_SEPARATOR.$this->dirs.DIRECTORY_SEPARATOR.'default_avatar_'.$this->size.'.jpg';
          }
       }
    }
@@ -105,14 +111,14 @@ class Avatar{
 
       try {
          $User = new User();
-         return $User->UpdateUserSession([
+         $User->UpdateUserSession([
             'utime'   =>   time()
          ]);
 
       } catch (\Exception $e) {
 
       }
-      return self::path();
+      return $this->path();
    }
    /**
    * @name delete

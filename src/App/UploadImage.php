@@ -35,7 +35,19 @@ class UploadImage{
       }
 
       try {
-         file_get_contents($link);
+         $ext = false;
+         $getimagesize = getimagesize($link);
+         $image = preg_replace('/image\//','.',$getimagesize['mime'],1);
+         if (!empty($image)) {
+            if ($image === $getimagesize['mime']) {
+               return [
+                  'prompt'   =>   'Link has expired',
+                  'error' => 5
+               ];
+            }else{
+               $ext = $image;
+            }
+         }
       } catch (\Exception $e) {
          return [
             'prompt'   =>   'Link has expired',
@@ -61,10 +73,8 @@ class UploadImage{
       $SavePath = app()->getRootPath().'entrance'.DIRECTORY_SEPARATOR.$path.$SaveDate;
 
       // 创建文件名
-      if($FileName){
-         $isImg = new Regexp($link);
-         if ($isImg->check('format.link.img')) {
-            $ext = strrchr($isImg->RemoveUrlParam(),'.');
+      if($FileName === true){
+         if ($ext !== false) {
             $FileName = md5(time().rand(1,99999999)).$ext;
          }else{
             return [
@@ -140,7 +150,9 @@ class UploadImage{
    **/
 	public function SaveBase64ToImage($base64,$path,$date = ['y','m','d'],$FileName = true,$isOs = true){
 		//匹配出图片的格式
-      if (preg_match('/^(data:\s*image\/(\w+);base64,)/', $base64, $result)){
+      $regexp = new Regexp($base64);
+      $result = $regexp->check('format.img.base64');
+      if ($result !== false){
 		   // 格式 .png
          $ext = $result[2];
 
@@ -214,6 +226,8 @@ class UploadImage{
    * @return string base64 code
    **/
    public function ImageToBase64($image) {
+      $isImg = new Regexp($image);
+      $image = $isImg->RemoveUrlParam();
       $base64 = '';
       $http = preg_match("/^http(s)?:\\/\\/.+/",$image);
       if($http){
@@ -226,16 +240,21 @@ class UploadImage{
           }
           $image = $link['path']['system'];
       }
+      $ext = strrchr($image,'.');
 
       $info = getimagesize($image);
+
       $data = fread(fopen($image, 'r'), filesize($image));
+
       $base64 = 'data:' . $info['mime'] . ';base64,' . chunk_split(base64_encode($data));
+
       if ($http) {
          $fileObject = new File($image);
          $fileObject->delete();
       }
       return $base64;
    }
+
 
    /**
    * @name 抓取保存图片
