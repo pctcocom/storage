@@ -22,7 +22,7 @@ class Text{
    * @param mixed $dir 存储目录文件夹名称
    * @param mixed $skip 加密解密类型
    **/
-   function __construct($id,$iid,$format,$content = true,$dir = 'books',$skip = 'books'){
+   function __construct($id,$iid,$format,$content = true,$dir = 'books',$skip = 'books',$markdown = []){
       $this->config = [
          'os'   =>   Cache::store('config')->get(md5('app\admin\controller\Config\storage'))
       ];
@@ -30,6 +30,7 @@ class Text{
       $this->storage = new \Pctco\Storage\Processor();
       $this->format = $format;
       $this->content = $content;
+      $this->markdown = $markdown;
 
       $this->id = $id;
       $id = abs(intval($id));
@@ -157,7 +158,7 @@ class Text{
 
 
       if ($to === 'md-html') {
-         $markdown = new Markdown();
+         $markdown = new Markdown($this->markdown);
          $transform = htmlspecialchars($markdown->text($content));
       }
 
