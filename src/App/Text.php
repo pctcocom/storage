@@ -159,7 +159,7 @@ class Text{
 
       if ($to === 'md-html') {
          $markdown = new Markdown($this->markdown);
-         $transform = htmlspecialchars($markdown->text($content));
+         $transform = $markdown->text($content);
          $toc = $markdown->contentsList();
       }
 
