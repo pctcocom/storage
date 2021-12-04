@@ -15,16 +15,18 @@ class UploadImage{
       ];
       $this->config = $config;
    }
-   /**
-   * @access 保存远程链接图片
-   * @param mixed    $link		需要保存图片的链接
-   * @param mixed    $path		保存路径  如 uploads/temp/
-   * @param mixed    $date    保存路径日期
-   * @param mixed    $FileName	保存的文件名称(默认md5)  true = 自动生成文件名
-   * @param mixed    $curl		获取远程文件所采用的方法
-   * @param mixed    $isOs    是否强制开启或关闭 os
-   * @return array
-   **/
+   /** 
+    ** 保存远程链接图片
+    ** SaveLinkImage($link,$path,$date = ['y','m','d'],$FileName=true,$curl=false,$isOs = true)
+    *? @date 21/12/03 16:25
+    *  @param String $link		需要保存图片的链接
+    *  @param String $path		保存路径  如 uploads/temp/
+    *  @param Array $date    保存路径日期
+    *  @param Boolean $FileName	保存的文件名称(默认md5)  true = 自动生成文件名
+    *  @param Boolean $curl		获取远程文件所采用的方法
+    *  @param Boolean $isOs    是否强制开启或关闭 os
+    *! @return Array
+    */
    public function SaveLinkImage($link,$path,$date = ['y','m','d'],$FileName=true,$curl=false,$isOs = true){
       $link = trim($link);
       if(empty($link)){
@@ -255,86 +257,227 @@ class UploadImage{
       return $base64;
    }
 
-
-   /**
-   * @name 抓取保存图片
-   * @describe 从文本内容中抓取 图片文件 本地图片或远程链接图片  或 替换 对象存储链接
-   * @param mixed $content html or md 内容
-   * @param mixed $type .md or .html
-   * @param mixed $dir uploads/books/
-   * @param mixed $date ['y','m']  or ''
-   * @return String
-   **/
-   public function GrabSave($content,$type,$dir,$date = ['y','m']){
+   /** 
+    ** 内容中的图片链接处理
+    *? @date 21/12/03 18:03
+    *  @param String $is 'save' = 保存内容 , 'view' = 查看内容 , 'delete' = 删除内容中的图片
+    *  @param String $FileFormat  文件格式：文本内容类型 .md or .html
+    *  @param String $content  文本内容
+    *  @param Number $NewText  $text = new \Pctco\Storage\App\Text(1,'','','','article','article');
+    *  @param String $DiskPath  磁盘存储路径 uploads/article/
+    *  @param Array $DiskPathDate  磁盘存储路径日期归档 ['y','m']
+    *  @param Boolean $ExternalLink 是否开启外链替换成内容
+    *! @return 
+    */
+   public function content($options = []){
+      $options = (Object)$options;
+      $content = $options->content;
       $regexp = new Regexp($content);
-
-      /**
-      * @name base64 图片
-      **/
-      $BArr = $regexp->find('html.img.src.base64');
-      if ($BArr !== false) {
-         foreach ($BArr as $base64) {
-            $image = $this->SaveBase64ToImage($base64,$dir,$date);
-            if ($image['error'] == 0) {
-               $path_absolute = $image['path']['absolute'];
-               if ($this->config['os']['use'] == 1) {
-                  $path_absolute = str_replace($this->config['os']['domain'],'',$path_absolute);
+      if ($options->NewText !== false) {
+         $NewTextPath = ltrim($options->NewText->path,DIRECTORY_SEPARATOR);
+      }
+      /** 
+       ** 保存内容(save)
+       *? @date 21/12/03 18:05、
+       *! @return 
+       */
+      if ($options->is === 'save') {
+         /** @name base64 图片 **/
+         $src = $regexp->find('html.img.src.base64');
+         if ($src !== false) {
+            foreach ($src as $base64) {
+               if ($options->NewText === false) {
+                  $image = $this->SaveBase64ToImage($base64,$options->DiskPath,$options->DiskPathDate);
+               }else{
+                  $image = $this->SaveBase64ToImage($base64,$NewTextPath,false);
                }
-               $content = str_replace($base64, $this->config['os']['var'].DIRECTORY_SEPARATOR.$path_absolute, $content);
-            }
-         }
-      }
-      /**
-      * @name image 外链图片
-      **/
-      if ($type === '.md') {
-         $LArr = $regexp->find('markdown.img.link');
-      }else{
-         $LArr = $regexp->find('html.img.src.link');
-      }
-      if ($LArr !== false) {
-         foreach ($LArr as $DLink) {
-            $DLinkDoname = parse_url($DLink);
-            if (empty($DLinkDoname['scheme'])) {
-               $DLinkDoname = '';
-            }else{
-               $DLinkDoname = $DLinkDoname['scheme'].'://'.$DLinkDoname['host'];
-            }
-
-            // 过滤掉不需下载的图片
-            if (empty(in_array(
-               $DLinkDoname,[
-                  '',
-                  $this->config['os']['var'],
-                  $this->config['os']['domain']
-               ]
-            ))) {
-               $image =
-               $this->SaveLinkImage($DLink,$dir,$date);
+               
                if ($image['error'] == 0) {
                   $path_absolute = $image['path']['absolute'];
                   if ($this->config['os']['use'] == 1) {
                      $path_absolute = str_replace($this->config['os']['domain'],'',$path_absolute);
                   }
-                  $content = str_replace($DLink, $this->config['os']['var'].$path_absolute, $content);
+                  $content = str_replace($base64, $this->config['os']['var'].DIRECTORY_SEPARATOR.$path_absolute, $content);
                }
-            }else{
-               // 编辑内容时 需要重新加上{os}
-               if (strstr($DLink,$this->config['os']['var']) === false) {
-                  if ($DLinkDoname == '') {
-                     $content = str_replace($DLink,$this->config['os']['var'].$DLink,$content);
+            }
+         }
+         /** @name 对象存储链接图片和外链图片处理 **/
+         if ($options->FileFormat === '.md') {
+            $src = $regexp->find('markdown.img.link');
+         }else{
+            $src = $regexp->find('html.img.src.link');
+         }
+         if ($src !== false) {
+            foreach ($src as $link) {
+               $url = parse_url($link);
+               if (empty($url['host'])) {
+                  $url = '';
+               }else{
+                  $url = $url['scheme'].'://'.$url['host'];
+               }
+
+               if (in_array($url,['',$this->config['os']['domain']])) {
+                  /** 
+                   ** 过滤掉不需下载的图片 给内容替换上 {os}
+                   ** 如果 $url 是 空、或者是 $this->config['os']['domain'] 的对象存储域名
+                   *? @date 21/12/03 18:14
+                   */
+
+                  // 判断 $link 是否包含 {os} 如果不包含则将 {os} 替换上去
+                  if (strstr($link,$this->config['os']['var']) === false) {
+                     if ($url == '') { // $url == '' 说明图片存储在服务器磁盘里
+                        if ($options->NewText === false) {
+                           $content = str_replace($link,$this->config['os']['var'].$link,$content);
+                        }else{
+                           /** 
+                            ** temp
+                            *? @date 21/12/03 19:24
+                            */
+                           // 临时存储目录文件
+                           $TempLink = app()->getRootPath().'entrance'.$link;
+                           // 临时存储目录文件名
+                           $LinkName = str_replace('/uploads/temp/','',$link);
+                           // 想要上传到对象存储中的图片
+                           $imageLinkOS = $NewTextPath.$LinkName;
+                           // 想要移动到归档中的文图
+                           $LinkArchive = app()->getRootPath().'entrance/'.$NewTextPath;
+
+                           try {
+                              $FileTemp = new File($TempLink);
+                              $FileArchive = new File($LinkArchive);
+                              if ($FileArchive->exists() === false) $FileArchive->mkdirs();
+                              if ($FileTemp->move($LinkArchive) === true) {
+                                 if ($this->config['os']['use'] == 1) {
+                                    $storage = new Processor();
+                                    $upload = $storage->upload($imageLinkOS);
+                                    $content = str_replace($link,'{os}/'.$imageLinkOS, $content);
+                                    if ($upload === true) {
+                                       $file3 = new File($LinkArchive.$LinkName);
+                                       $file3->delete();
+                                    }
+                                 }else{
+                                    $content = str_replace($link,'{os}/'.$LinkArchive.$LinkName, $content);
+                                 }
+                              }
+                           } catch (\Throwable $th) {
+                              //throw $th;
+                           }
+                        }
+                     }else{
+                        if ($options->NewText === false) {
+                           $DiskPath = $options->DiskPath;
+                        }else{
+                           $DiskPath = $NewTextPath;
+                        }
+                        $image = str_replace(
+                           $this->config['os']['domain'].'/'.$DiskPath,
+                           '',
+                           $link
+                        );
+                        $content = str_replace(
+                           $link,
+                           $this->config['os']['var'].'/'.$DiskPath.$image,
+                           $content
+                        );
+                     }
+                  }
+               }else{
+                  /** 
+                   ** 下载内容中图片的图片并且替换上 {os}
+                   *? @date 21/12/03 18:31
+                   */
+                  if ($options->NewText === false) {
+                     $image = $this->SaveLinkImage($link,$options->DiskPath,$options->DiskPathDate);
                   }else{
-                     $image = str_replace($this->config['os']['domain'].'/'.$dir,'',$DLink);
-                     $content = str_replace($DLink,$this->config['os']['var'].'/'.$dir.$image,$content);
+                     $image = $this->SaveLinkImage($link,$NewTextPath,false);
+                  }
+                  
+                  if ($image['error'] == 0) {
+                     $path_absolute = $image['path']['absolute'];
+                     
+                     if ($this->config['os']['use'] == 1) {
+                        $path_absolute = str_replace($this->config['os']['domain'],'',$path_absolute);
+                     }
+                     $content = str_replace($link, $this->config['os']['var'].$path_absolute, $content);
+                  }
+                  
+               }
+            }
+         }
+         return $content;
+      }
+      /** 
+       ** 查看内容(view)
+       *? @date 21/12/03 18:34
+       */
+      if ($options->is === 'view') {
+         if ($this->config['os']['use'] == 1) {
+            // 替换对象存储模式
+            $content = str_replace(
+               $this->config['os']['var'],
+               $this->config['os']['domain'],
+               $content,
+               $i
+            );
+         }else{
+            // 替换服务器磁盘存储模式
+            $content = str_replace(
+               $this->config['os']['var'],
+               '',
+               $content,
+               $i
+            );
+         }
+         if ($options->ExternalLink) {
+            return $regexp->ReplaceExternalLinks($content);
+         }
+         
+         return $content;
+      }
+
+      if ($options->is === 'delete') {
+         $arr = [];
+         if ($options->FileFormat === '.md') {
+            $arr = $regexp->find('markdown.img.link');
+         }else{
+            $arr = $regexp->find('html.img.src.link');
+         }
+         if (!empty($arr)) {
+            foreach ($arr as $link) {
+               $url = parse_url($link);
+               if (empty($url['scheme'])) {
+                  $url = '';
+               }else{
+                  $url = $url['scheme'].'://'.$url['host'];
+               }
+               /** 
+                ** 验证 $url 是否是{os}
+               */
+               if (in_array($url,['',$this->config['os']['var']])) {
+                  $image = str_replace($this->config['os']['var'].DIRECTORY_SEPARATOR,'',$link);
+                  if ($this->config['os']['use'] == 1) {
+                     /** 
+                      ** 删除第三方对象存储里的里的图片
+                     *? @date 21/12/03 14:57
+                     */
+                     $storage = new Processor();
+                     $storage->delete($image);
+                  }else{
+                     /** 
+                      ** 删除本地图片
+                     *? @date 21/12/03 14:57
+                     */
+                     $file = new File(app()->getRootPath().'entrance'.DIRECTORY_SEPARATOR.$image);
+                     $file->delete();
                   }
                }
             }
          }
       }
-      return $content;
    }
+   
    /**
-   * @name 抓取绝对图片链接保存图片
+   * @name 抓取绝对图片链接保存图片 （books 导入时使用）
    * @describe 从文本内容中抓取 图片文件 本地图片或远程链接图片 并且保存
    * @param mixed $content html or md 内容
    * @param mixed $type .md or .html
@@ -344,12 +487,12 @@ class UploadImage{
       $regexp = new Regexp($content);
 
       if ($type === '.md') {
-         $LArr = $regexp->find('markdown.img.link');
+         $src = $regexp->find('markdown.img.link');
       }else{
-         $LArr = $regexp->find('html.img.src.link');
+         $src = $regexp->find('html.img.src.link');
       }
-      if ($LArr !== false) {
-         foreach ($LArr as $DLink) {
+      if ($src !== false) {
+         foreach ($src as $DLink) {
             $LinkImage = str_replace($this->config['os']['var'],$this->config['os']['domain'], $DLink);
             $image =
             $this->SaveLinkImage($LinkImage,$dir,$date);
@@ -361,65 +504,6 @@ class UploadImage{
                $content = str_replace($DLink, $this->config['os']['var'].$path_absolute, $content);
             }
          }
-      }
-      return $content;
-   }
-   /**
-   * @name 抓取删除图片
-   * @describe 从文本内容中抓取 图片文件 并且删除
-   * @param mixed $content html or md 内容
-   * @param mixed $type .md or .html
-   * @return String
-   **/
-   public function GrabDel($content,$type){
-      $regexp = new Regexp($content);
-      $arr = [];
-      if ($type === '.md') {
-         $arr = $regexp->find('markdown.img.link');
-      }else{
-         $arr = $regexp->find('html.img.src.link');
-      }
-      if (!empty($arr)) {
-         foreach ($arr as $link) {
-            $DLinkDoname = parse_url($link);
-            if (empty($DLinkDoname['scheme'])) {
-               $DLinkDoname = '';
-            }else{
-               $DLinkDoname = $DLinkDoname['scheme'].'://'.$DLinkDoname['host'];
-            }
-            if (in_array(
-               $DLinkDoname,[
-                  '',
-                  $this->config['os']['var']
-               ]
-            )) {
-               $image = str_replace($this->config['os']['var'].DIRECTORY_SEPARATOR,'',$link);
-               if ($this->config['os']['use'] != 1) {
-                  $file = new File(app()->getRootPath().'entrance'.DIRECTORY_SEPARATOR.$image);
-                  $file->delete();
-               }
-               if ($this->config['os']['use'] == 1) {
-                  $storage = new Processor();
-                  $storage->delete($image);
-               }
-            }
-         }
-      }
-   }
-   /**
-   * @name replace path
-   * @describe 替换对象存储链接内容的图片链接域名 ()
-   * @param string $content 内容
-   * @return string
-   **/
-   public function repla($content,$type = '.md'){
-      if ($type !== '.md') {
-         $content = htmlspecialchars_decode($content);
-      }
-      if ($this->config['os']['use'] == 1) {
-         $content = str_replace($this->config['os']['var'],$this->config['os']['domain'],$content,$i);
-      }else{
-         $content = str_replace($this->config['os']['var'],'',$content,$i);
       }
       return $content;
    }
