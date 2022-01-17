@@ -260,7 +260,7 @@ class UploadImage{
    /** 
     ** 内容中的图片链接处理
     *? @date 21/12/03 18:03
-    *  @param String $is 'save' = 保存内容 , 'view' = 查看内容 , 'delete' = 删除内容中的图片
+    *  @param String $is 'save' = 保存内容 , 'save-all' = 全部保存(包括图片附件都会全部下载保存下来) , 'view' = 查看内容 , 'delete' = 删除内容中的图片
     *  @param String $FileFormat  文件格式：文本内容类型 .md or .html
     *  @param String $content  文本内容
     *  @param Number $NewText  $text = new \Pctco\Storage\App\Text(1,'','','','article','article');
@@ -406,6 +406,37 @@ class UploadImage{
          }
          return $content;
       }
+
+      /** 
+       ** 全部保存(包括图片附件都会全部下载保存下来)
+       *? @date 22/01/17 16:07
+       *! @return 
+       */
+      if ($options->is === 'save-all') {
+         if ($options->FileFormat === '.md') {
+            $src = $regexp->find('markdown.img.link');
+         }else{
+            $src = $regexp->find('html.img.src.link');
+         }
+         if ($src !== false) {
+            foreach ($src as $DLink) {
+               $link = str_replace($this->config['os']['var'],$this->config['os']['domain'], $DLink);
+               if ($options->NewText === false) {
+                  $image = $this->SaveLinkImage($link,$options->DiskPath,$options->DiskPathDate);
+               }else{
+                  $image = $this->SaveLinkImage($link,$NewTextPath,false);
+               }
+               if ($image['error'] == 0) {
+                  $path_absolute = $image['path']['absolute'];
+                  if ($this->config['os']['use'] == 1) {
+                     $path_absolute = str_replace($this->config['os']['domain'],'',$path_absolute);
+                  }
+                  $content = str_replace($DLink, $this->config['os']['var'].$path_absolute, $content);
+               }
+            }
+         }
+         return $content;
+      }
       /** 
        ** 查看内容(view)
        *? @date 21/12/03 18:34
@@ -530,5 +561,31 @@ class UploadImage{
          }
       }
       return $link;
+   }
+   /** 
+    ** 填充链接
+    *? @date 22/01/12 14:39
+    *  @param myParam1 Explain the meaning of the parameter...
+    *  @param myParam2 Explain the meaning of the parameter...
+    *! @return String
+    */
+   public function FillLink($content,$filllink,$type){
+      $regexp = new Regexp($content);
+
+      if ($type === '.md') {
+         $src = $regexp->find('markdown.img.link');
+      }else{
+         $src = $regexp->find('html.img.src.link');
+      }
+      if ($src !== false) {
+         foreach ($src as $DLink) {
+            $regexpUrl = new Regexp($DLink);
+            if ($regexpUrl->IsUrlType() === 'RelativelyPathUrl') {
+               $LinkImage = str_replace($DLink,$filllink.$DLink,$DLink);
+               $content = str_replace($DLink, $LinkImage, $content);
+            }
+         }
+      }
+      return $content;
    }
 }

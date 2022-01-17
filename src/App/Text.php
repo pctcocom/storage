@@ -93,8 +93,8 @@ class Text{
       }else{
          $w = new FileWriter($this->file,'w+');
          $w->write(self::GetContent());
-         return self::get();
       }
+      return self::get();
    }
    /**
    * @name delete
