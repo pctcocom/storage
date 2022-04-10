@@ -162,10 +162,13 @@ class Tencent{
                ]);
             }
          }else{ // 单文件删除
-            $this->client->deleteObject([
-               'Bucket' => $this->config['bucket'],
-               'Key' => $file
-            ]);
+            if ($file !== false) {
+               $this->client->deleteObject([
+                  'Bucket' => $this->config['bucket'],
+                  'Key' => $file
+               ]);
+            }
+            
          }
 
          return true;
