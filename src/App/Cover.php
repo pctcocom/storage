@@ -41,9 +41,9 @@ class Cover{
       if ($cover !== false) {
          $regexp = new \Pctco\Verification\Regexp($cover);
          if ($regexp->check('format.link.img') === false) {
-            $image = $UploadImage->SaveBase64ToImage($cover,'entrance/uploads/temp/',['y','m'],true,false);
+            $image = $UploadImage->SaveBase64ToImage($cover,'uploads/temp/',['y','m'],true,false);
          }else{
-            $image = $UploadImage->SaveLinkImage($cover,'entrance/uploads/temp/',['y','m'],true,false,false);
+            $image = $UploadImage->SaveLinkImage($cover,'uploads/temp/',['y','m'],true,false,false);
          }
 
          if ($image['error'] == 0) {
