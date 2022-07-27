@@ -1,6 +1,7 @@
 <?php
 namespace Pctco\Storage\App;
 use Naucon\File\File;
+use think\facade\Cache;
 use app\model\User;
 /**
  * 头像处理
@@ -33,9 +34,11 @@ class Avatar{
 
       $this->config = [
          'size'   =>   [200,120,48],
-         'name'   =>   ['big', 'middle', 'small']
+         'name'   =>   ['big', 'middle', 'small'],
+         'os'   =>   Cache::store('config')->get(md5('app\admin\controller\Config\storage'))
       ];
 
+      $this->storage = new \Pctco\Storage\Processor();
 
       if ($size === 'all') {
          $this->size = ['big', 'middle', 'small'];
@@ -66,11 +69,27 @@ class Avatar{
          $group = [];
          foreach ($this->size as $v) {
             $path = substr($this->id, -2)."_avatar_$v.jpg";
-            if(file_exists($this->dir.$path)) {
-            	$group[$v] = $this->path.$path;
-            } else {
-            	$group[$v] =  DIRECTORY_SEPARATOR.'uploads'.DIRECTORY_SEPARATOR.$this->dirs.DIRECTORY_SEPARATOR.'default_avatar_'.$v.'.jpg';
+
+            if ($this->config['os']['use'] == 1) {
+               
+               if($this->storage->exist(ltrim($this->path.$path,'/'))) {
+               
+                  $group[$v] = $this->config['os']['domain'].$this->path.$path;
+                  
+               } else {
+                  $group[$v] =  DIRECTORY_SEPARATOR.'uploads'.DIRECTORY_SEPARATOR.$this->dirs.DIRECTORY_SEPARATOR.'default_avatar_'.$v.'.jpg';
+               }
+            }else{
+               if(file_exists($this->dir.$path)) {
+               
+                  $group[$v] = $this->path.$path;
+                  
+               } else {
+                  $group[$v] =  DIRECTORY_SEPARATOR.'uploads'.DIRECTORY_SEPARATOR.$this->dirs.DIRECTORY_SEPARATOR.'default_avatar_'.$v.'.jpg';
+               }
             }
+
+            
          }
          return $group;
       }else{
@@ -105,7 +124,15 @@ class Avatar{
       foreach ($this->config['size'] as $i => $size) {
          $img = substr($this->id, -2).'_avatar_'.$this->config['name'][$i].'.jpg';
          $image->thumb($size,$size,\think\Image::THUMB_SCALING)->save($this->dir.$img);
+
+         if ($this->config['os']['use'] == 1) {
+            $osUploadFile = ltrim($this->path.$img,'/');
+            $this->storage->upload($osUploadFile);
+            $file = new File($this->dir.$img);
+            $file->delete();
+         }
       }
+      
       $fileObject = new File($this->avatar);
       $fileObject->delete();
 
@@ -127,9 +154,14 @@ class Avatar{
    **/
    public function delete(){
       foreach ($this->config['name'] as $i) {
-         $img = $this->dir.substr($this->id, -2)."_avatar_$i.jpg";
-         $fileObject = new File($img);
-         $fileObject->delete();
+         if ($this->config['os']['use'] == 1) {
+            $osUploadFile = ltrim($this->path.$img,'/');
+            $this->storage->delete($osUploadFile);
+         }else{
+            $img = $this->dir.substr($this->id, -2)."_avatar_$i.jpg";
+            $fileObject = new File($img);
+            $fileObject->delete();
+         }
       }
    }
 }
