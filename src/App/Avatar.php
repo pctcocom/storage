@@ -154,11 +154,13 @@ class Avatar{
    **/
    public function delete(){
       foreach ($this->config['name'] as $i) {
+
+         $fileName = substr($this->id, -2)."_avatar_$i.jpg";
+
          if ($this->config['os']['use'] == 1) {
-            $osUploadFile = ltrim($this->path.$img,'/');
-            $this->storage->delete($osUploadFile);
+            $this->storage->delete(ltrim($this->path.$fileName,'/'));
          }else{
-            $img = $this->dir.substr($this->id, -2)."_avatar_$i.jpg";
+            $img = $this->dir.$fileName;
             $fileObject = new File($img);
             $fileObject->delete();
          }
