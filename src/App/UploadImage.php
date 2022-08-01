@@ -49,6 +49,19 @@ class UploadImage{
             }else{
                $ext = $image;
             }
+         }else{
+            /** 
+             ** 处理.svg
+             *? @date 22/08/02 03:13
+             */
+            $image = parse_url($link);
+            if (empty($image['path'])) {
+               $ext = false;
+            }else{
+               $ext = strrchr($image['path'],'.');
+               if ($ext !== '.svg') $ext = false;
+            }
+            
          }
       } catch (\Exception $e) {
          return [
@@ -155,8 +168,10 @@ class UploadImage{
       $regexp = new Regexp($base64);
       $result = $regexp->check('format.img.base64');
       if ($result !== false){
-		   // 格式 .png
+		   // 格式 png
          $ext = $result[2];
+
+         if ($ext === 'svg+xml') $ext = 'svg';
 
          if ($FileName) {
             $FileName = md5(time().rand(1,99999999)).'.'.$ext;
@@ -187,6 +202,7 @@ class UploadImage{
          if (file_put_contents($SavePath,base64_decode(str_replace($result[1], '', $base64)))){
 
             $absolute = DIRECTORY_SEPARATOR.$path.$SaveDate.$FileName;
+
             if ($isOs) {
                if ($this->config['os']['use'] == 1) {
                   $storage = new Processor();
