@@ -94,11 +94,18 @@ class Avatar{
          return $group;
       }else{
          $path = substr($this->id, -2)."_avatar_$this->size.jpg";
+
+         if ($this->config['os']['use'] == 1) {
+            if($this->storage->exist(ltrim($this->path.$path,'/'))) {
+               return $this->config['os']['domain'].$this->path.$path;
+            }
+         }
+
          if(file_exists($this->dir.$path)) {
          	return $this->path.$path;
-         } else {
-         	return DIRECTORY_SEPARATOR.'uploads'.DIRECTORY_SEPARATOR.$this->dirs.DIRECTORY_SEPARATOR.'default_avatar_'.$this->size.'.jpg';
          }
+
+         return DIRECTORY_SEPARATOR.'uploads'.DIRECTORY_SEPARATOR.$this->dirs.DIRECTORY_SEPARATOR.'default_avatar_'.$this->size.'.jpg';
       }
    }
    /**
